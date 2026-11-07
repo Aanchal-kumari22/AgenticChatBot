@@ -1,13 +1,8 @@
 # Monthly AI News Summary
 
-## Gemini at Work 2026: Introducing Gemini Agent  
-**Publication date:** Thu, 08 Oct 2026  
-**Summary:** Google’s Gemini Enterprise platform now includes a new “Gemini Agent” that enables multi‑agentic solutions for businesses. Deloitte has built a prototype that uses operational heat maps to identify high‑value AI opportunities, accelerating custom agentic workflow deployment and reportedly delivering up to three times faster measurable impact. Other customers, such as BNP Paribas, are also reporting significant benefits.  
-**Source:** [cloud.google.com](https://cloud.google.com/blog/products/ai-machine-learning/welcome-to-gemini-at-work-2026)
+**AI Doesn’t Bleed**  
+*The Millstone* – Sun, 18 Oct 2026 19:24:22 GMT  
 
----
+Large Language Models (LLMs) primarily process text in chatbot systems and are not truly intelligent; they predict the next word rather than understand the real world. Their reasoning is limited by a finite context window (token limit) and training data, leading to hallucinations or confabulations. The article contrasts prompt‑based AI, which requires active user input, with agentic AI that can autonomously interpret user goals and execute tasks.  
 
-## Applications of artificial intelligence and machine learning in food processing, quality control, and food safety: a critical review  
-**Publication date:** Wed, 21 Oct 2026  
-**Summary:** This review surveys recent AI and ML advances in food safety, including agentic AI‑gated electrochemical sensing for decision‑making and edge deep learning for nondestructive detection. It also discusses the use of generative AI and large language models for food‑related information retrieval, formulation support, and personalization.  
-**Source:** [nature.com](https://www.nature.com/articles/s44573-026-00014-0)
+[Original source](https://millstonenews.com/ai-doesnt-bleed)

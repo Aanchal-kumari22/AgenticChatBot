@@ -1,67 +1,90 @@
 import streamlit as st
-from pathlib import Path
 
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+from langchain_core.messages import (
+    HumanMessage,
+    AIMessage,
+    ToolMessage
+)
 
 
 class DisplayResultStreamlit:
+
     def __init__(self, usecase, graph, user_message):
+
         self.usecase = usecase
         self.graph = graph
         self.user_message = user_message
 
     def display_result_on_ui(self):
-        usecase = str(self.usecase).strip().lower()
+
+        usecase = " ".join(
+            str(self.usecase).strip().lower().split()
+        )
 
         # --------------------------------------------------
         # 1. BASIC CHATBOT
         # --------------------------------------------------
+
         if usecase == "basic chatbot":
+
             with st.chat_message("user"):
                 st.write(self.user_message)
 
             with st.chat_message("assistant"):
+
                 response_placeholder = st.empty()
 
                 try:
+
                     input_state = {
                         "messages": [
-                            HumanMessage(content=self.user_message)
+                            HumanMessage(
+                                content=self.user_message
+                            )
                         ]
                     }
 
-                    # Invoke the LangGraph workflow
                     result = self.graph.invoke(input_state)
 
                     messages = result.get("messages", [])
-                    final_answer = None
 
                     if not isinstance(messages, list):
                         messages = [messages]
 
-                    # Find the last non-empty AI response
+                    final_answer = None
+
                     for message in reversed(messages):
+
                         if (
                             isinstance(message, AIMessage)
                             and message.content
-                            and not getattr(message, "tool_calls", None)
+                            and not getattr(
+                                message, "tool_calls", None
+                            )
                         ):
                             final_answer = message.content
                             break
 
                     if final_answer is None:
+
                         response_placeholder.warning(
-                            "The chatbot did not return a final answer. "
-                            "Check the terminal for errors."
+                            "The chatbot did not return a final answer."
                         )
 
                     elif isinstance(final_answer, str):
-                        response_placeholder.markdown(final_answer)
+
+                        response_placeholder.markdown(
+                            final_answer
+                        )
 
                     else:
-                        response_placeholder.write(final_answer)
+
+                        response_placeholder.write(
+                            final_answer
+                        )
 
                 except Exception as e:
+
                     response_placeholder.error(
                         f"Failed to generate response: "
                         f"{type(e).__name__}: {e}"
@@ -70,16 +93,28 @@ class DisplayResultStreamlit:
         # --------------------------------------------------
         # 2. CHATBOT WITH WEB SEARCH
         # --------------------------------------------------
+
         elif usecase == "chatbot with web search":
+
+            with st.chat_message("user"):
+                st.write(self.user_message)
+
             try:
+
                 initial_state = {
                     "messages": [
-                        HumanMessage(content=self.user_message)
+                        HumanMessage(
+                            content=self.user_message
+                        )
                     ]
                 }
 
-                # Invoke the graph and retrieve its messages
-                result = self.graph.invoke(initial_state)
+                with st.spinner(
+                    "Searching the web and generating an answer..."
+                ):
+
+                    result = self.graph.invoke(initial_state)
+
                 messages = result.get("messages", [])
 
                 if not isinstance(messages, list):
@@ -87,39 +122,52 @@ class DisplayResultStreamlit:
 
                 final_answer = None
 
-                # Display the conversation in order
+                # Find the final AI response.
                 for message in messages:
-                    if isinstance(message, HumanMessage):
-                        with st.chat_message("user"):
-                            st.write(message.content)
 
-                    elif isinstance(message, ToolMessage):
-                        with st.chat_message("assistant"):
-                            st.caption("Web search tool result")
-                            st.write(message.content)
+                    if isinstance(message, AIMessage):
 
-                    elif isinstance(message, AIMessage):
-                        # Ignore intermediate tool-calling messages
-                        if getattr(message, "tool_calls", None):
-                            continue
-
-                        if message.content:
-                            with st.chat_message("assistant"):
-                                if isinstance(message.content, str):
-                                    st.markdown(message.content)
-                                else:
-                                    st.write(message.content)
-
+                        if (
+                            message.content
+                            and not getattr(
+                                message, "tool_calls", None
+                            )
+                        ):
                             final_answer = message.content
 
-                # Handle an empty response
-                if final_answer is None:
+                if final_answer is not None:
+
+                    with st.chat_message("assistant"):
+
+                        if isinstance(final_answer, str):
+                            st.markdown(final_answer)
+                        else:
+                            st.write(final_answer)
+
+                    # Display search results separately.
+                    tool_messages = [
+                        message
+                        for message in messages
+                        if isinstance(message, ToolMessage)
+                    ]
+
+                    if tool_messages:
+
+                        with st.expander(
+                            "View web search results"
+                        ):
+
+                            for tool_message in tool_messages:
+                                st.write(tool_message.content)
+
+                else:
+
                     st.warning(
-                        "The chatbot did not return a final answer. "
-                        "Check the terminal for errors."
+                        "The chatbot did not return a final answer."
                     )
 
             except Exception as e:
+
                 st.error(
                     f"Failed to generate response: "
                     f"{type(e).__name__}: {e}"
@@ -128,53 +176,86 @@ class DisplayResultStreamlit:
         # --------------------------------------------------
         # 3. AI NEWS
         # --------------------------------------------------
+
         elif usecase == "ai news":
+
             try:
-                frequency = str(self.user_message).strip()
 
-                if not frequency:
-                    st.warning("Please provide a news frequency.")
-                    return
+                frequency = str(
+                    self.user_message
+                ).strip().lower()
 
-                with st.spinner("Fetching and summarizing news..."):
-                    # Keep the input format shown in your original code
-                    result = self.graph.invoke(
-                        {"messages": frequency}
-                    )
+                if frequency not in {
+                    "daily",
+                    "weekly",
+                    "monthly"
+                }:
 
-                # Find the generated Markdown summary
-                news_path = (
-                    Path.cwd()
-                    / "AINews"
-                    / f"{frequency.lower()}_summary.md"
-                )
-
-                if not news_path.is_file():
-                    st.error(
-                        "News summary was not generated or the file "
-                        f"was not found: {news_path}"
+                    st.warning(
+                        "Please select Daily, Weekly or Monthly."
                     )
                     return
 
-                markdown_content = news_path.read_text(
-                    encoding="utf-8"
-                ).strip()
+                input_state = {
+                    "frequency": frequency,
+                    "news_data": [],
+                    "summary": ""
+                }
 
-                if markdown_content:
+                with st.spinner(
+                    f"Fetching {frequency} AI news and "
+                    "generating summaries..."
+                ):
+
+                    result = self.graph.invoke(input_state)
+
+                # Get summary directly from graph output.
+                summary = result.get("summary", "")
+
+                if summary:
+
+                    st.success(
+                        f"{frequency.capitalize()} AI News "
+                        "generated successfully!"
+                    )
+
+                    st.markdown("---")
+
                     st.markdown(
-                        markdown_content,
+                        summary,
                         unsafe_allow_html=False
                     )
+
+                    # Show saved file location.
+                    output_file = result.get(
+                        "output_file"
+                    )
+
+                    if output_file:
+
+                        st.caption(
+                            f"Summary saved at: {output_file}"
+                        )
+
                 else:
-                    st.warning("The generated news summary is empty.")
+
+                    st.warning(
+                        "No AI news summary was generated."
+                    )
 
             except Exception as e:
+
                 st.error(
-                    f"An error occurred: {type(e).__name__}: {e}"
+                    f"AI News generation failed: "
+                    f"{type(e).__name__}: {e}"
                 )
 
         # --------------------------------------------------
         # 4. UNSUPPORTED USE CASE
         # --------------------------------------------------
+
         else:
-            st.error(f"Unsupported use case: {self.usecase}")
+
+            st.error(
+                f"Unsupported use case: {self.usecase}"
+            )

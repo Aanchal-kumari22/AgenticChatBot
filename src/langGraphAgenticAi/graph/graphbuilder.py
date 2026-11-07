@@ -26,9 +26,7 @@ class GraphBuilder:
     def __init__(self, model, tavily_api_key=None):
 
         if model is None:
-            raise ValueError(
-                "LLM model is not initialized."
-            )
+            raise ValueError("LLM model is not initialized.")
 
         self.llm = model
         self.tavily_api_key = tavily_api_key
@@ -57,9 +55,15 @@ class GraphBuilder:
 
     def chatbot_with_tools_build_graph(self):
 
-        tools = get_tools(
-            api_key=self.tavily_api_key
-        )
+        if not self.tavily_api_key:
+            raise ValueError(
+                "TAVILY_API_KEY is not configured on the server."
+            )
+
+        tools = get_tools(api_key=self.tavily_api_key)
+
+        if not tools:
+            raise ValueError("No search tools were configured.")
 
         tool_node = create_tool_node(tools)
 
@@ -97,6 +101,11 @@ class GraphBuilder:
     # ------------------------------------------
 
     def ai_news_builder_graph(self):
+
+        if not self.tavily_api_key:
+            raise ValueError(
+                "TAVILY_API_KEY is not configured on the server."
+            )
 
         ai_news_node = AINewsNode(
             self.llm,
@@ -151,6 +160,7 @@ class GraphBuilder:
             usecase.strip().lower().split()
         )
 
+        # Create a fresh graph for each setup.
         self.graph_builder = StateGraph(State)
 
         if normalized_usecase == "basic chatbot":

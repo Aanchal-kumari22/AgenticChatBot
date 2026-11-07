@@ -19,11 +19,19 @@ class LoadStreamlitUI:
 
         st.header("🤖 " + self.config.get_page_title())
 
+        # Load API keys from environment variables.
+        # On Render, configure these in the Environment tab.
+        groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
+        tavily_api_key = os.getenv("TAVILY_API_KEY", "").strip()
+
+        # Store keys in the controls dictionary.
+        self.user_controls["GROQ_API_KEY"] = groq_api_key
+        self.user_controls["TAVILY_API_KEY"] = tavily_api_key
+
+        # Initialize session state defaults.
         defaults = {
             "timeframe": "Daily",
-            "IsFetchButtonClicked": False,
-            "GROQ_API_KEY": "",
-            "TAVILY_API_KEY": ""
+            "IsFetchButtonClicked": False
         }
 
         for key, value in defaults.items():
@@ -34,7 +42,7 @@ class LoadStreamlitUI:
 
             st.subheader("LLM Configuration")
 
-            # LLM provider
+            # LLM provider selection
             llm_options = self.config.get_llm_options()
 
             selected_llm = st.selectbox(
@@ -44,7 +52,7 @@ class LoadStreamlitUI:
 
             self.user_controls["selected_llm"] = selected_llm
 
-            # Groq configuration
+            # Groq model selection
             if selected_llm == "Groq":
 
                 model_options = self.config.get_groq_model_options()
@@ -57,18 +65,15 @@ class LoadStreamlitUI:
 
                 self.user_controls["selected_groq_model"] = selected_model
 
-                groq_api_key = st.text_input(
-                    "Groq API Key",
-                    type="password",
-                    key="GROQ_API_KEY"
-                )
-
-                self.user_controls["GROQ_API_KEY"] = groq_api_key
-
                 if not groq_api_key:
-                    st.warning("Please enter your Groq API key.")
+                    st.error(
+                        "Groq API key is not configured. "
+                        "Please contact the administrator."
+                    )
+                else:
+                    st.success("Groq API configured.")
 
-            # Use case
+            # Use case selection
             usecase_options = self.config.get_usecase_options()
 
             selected_usecase = st.selectbox(
@@ -82,7 +87,7 @@ class LoadStreamlitUI:
                 selected_usecase.strip().lower().split()
             )
 
-            # Tavily configuration
+            # Tavily configuration validation
             search_usecases = {
                 "chatbot with web search",
                 "ai news"
@@ -92,19 +97,13 @@ class LoadStreamlitUI:
 
                 st.subheader("🌐 Web Search Configuration")
 
-                tavily_api_key = st.text_input(
-                    "Tavily API Key",
-                    type="password",
-                    key="TAVILY_API_KEY"
-                )
-
-                self.user_controls["TAVILY_API_KEY"] = tavily_api_key
-
-                if tavily_api_key:
-                    os.environ["TAVILY_API_KEY"] = tavily_api_key
+                if not tavily_api_key:
+                    st.error(
+                        "Tavily API key is not configured. "
+                        "Please contact the administrator."
+                    )
                 else:
-                    os.environ.pop("TAVILY_API_KEY", None)
-                    st.warning("Please enter your Tavily API key.")
+                    st.success("Tavily API configured.")
 
             # AI News Explorer
             if normalized_usecase == "ai news":
